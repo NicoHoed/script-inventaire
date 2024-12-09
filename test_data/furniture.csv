@@ -1,3 +1,3 @@
-product_name,quantity,unit_price
-Sofa,10,799.99
-Dining Table,5,999.99
+product_name,quantity,unit_price,category
+Sofa,10,799.99,Furniture
+Dining Table,5,999.99,Furniture

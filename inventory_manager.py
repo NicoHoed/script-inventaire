@@ -1,71 +1,77 @@
-import os
 import csv
+import os
 
 
 class InventoryManager:
     def __init__(self):
         self.inventory = []
 
-    def import_data(self, data_dir: str, output_file: str) -> None:
-        """Imports CSV data from the provided directory and consolidates into a single CSV."""
-        self.inventory.clear()  # Clear any existing inventory
-        records_imported = 0
-
-        for filename in os.listdir(data_dir):
-            if filename.endswith(".csv"):
-                filepath = os.path.join(data_dir, filename)
-                category = filename.split('.')[0]  # Category name derived from the filename
-
-                try:
-                    with open(filepath, newline='', encoding="utf-8") as csvfile:
-                        reader = csv.DictReader(csvfile)
-                        for row in reader:
-                            row['category'] = category
-                            self.inventory.append(row)
-                            records_imported += 1
-                except Exception as e:
-                    print(f"Error processing file {filename}: {e}")
-
-        # Write the combined inventory into the output file
-        self.write_inventory_to_csv(output_file)
-
-        print(f"Imported data from {records_imported} records.")
-        print(f"Inventory saved to {output_file}")
-
-    def write_inventory_to_csv(self, output_file: str) -> None:
-        """Write the current inventory to a CSV file."""
-        if not self.inventory:
-            print("No inventory data to write.")
+    def import_csv_files(self, directory):
+        """Imports all CSV files from the specified directory."""
+        if not os.path.isdir(directory):
+            print(f"Error: {directory} is not a valid directory.")
             return
 
-        fieldnames = ['product_name', 'quantity', 'unit_price', 'category']
-        try:
-            with open(output_file, mode='w', newline='', encoding="utf-8") as file:
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
-                writer.writeheader()
-                writer.writerows(self.inventory)
-            print(f"Inventory written to {output_file}.")
-        except Exception as e:
-            print(f"Error writing to file {output_file}: {e}")
+        print(f"Importing data from: {directory}")
+        for filename in os.listdir(directory):
+            if filename.endswith(".csv"):
+                filepath = os.path.join(directory, filename)
+                self._import_csv(filepath)
 
-    def search_inventory(self, query: str, inventory_file: str) -> None:
-        """Searches the inventory CSV file for a given query."""
-        results = []
-        query_lower = query.strip().lower()
-
+    def _import_csv(self, filepath):
+        """Helper method to import a CSV file into the inventory."""
+        print(f"Importing {filepath}...")
         try:
-            with open(inventory_file, mode='r', newline='', encoding="utf-8") as file:
+            with open(filepath, mode="r", newline="", encoding="utf-8") as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    # Search for exact match in 'category' or 'product_name'
-                    if query_lower in row['product_name'].lower() or query_lower in row['category'].lower():
-                        results.append(row)
+                    # Ensure that all the necessary fields exist
+                    if 'product_name' in row and 'quantity' in row and 'unit_price' in row and 'category' in row:
+                        self.inventory.append({
+                            'product_name': row['product_name'],
+                            'quantity': row['quantity'],
+                            'unit_price': row['unit_price'],
+                            'category': row['category']
+                        })
+                    else:
+                        print(f"Skipping row due to missing data: {row}")
         except Exception as e:
-            print(f"Error reading file {inventory_file}: {e}")
+            print(f"Error reading {filepath}: {e}")
 
-        if results:
-            print(f"Found {len(results)} matching items:")
-            for result in results:
-                print(result)
+    def search_inventory(self, search_term):
+        """Search the inventory for items that match the search term."""
+        # Normalize the search term for case-insensitive search
+        search_term = search_term.lower()
+
+        found_items = [item for item in self.inventory if
+                       search_term in item['product_name'].lower() or search_term in item['category'].lower()]
+
+        if found_items:
+            print(f"Found {len(found_items)} matching item(s):")
+            for item in found_items:
+                print(item)
         else:
             print("No matching items found.")
+
+    def generate_report(self, output_file):
+        """Generates a report summary of the inventory and writes it to a file."""
+        category_counts = {}
+        for item in self.inventory:
+            category = item['category']
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+        with open(output_file, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Category", "Count"])
+            for category, count in category_counts.items():
+                writer.writerow([category, count])
+        print(f"Report generated at {output_file}")
+
+    def save_inventory(self, output_file):
+        """Saves the current inventory to a CSV file."""
+        with open(output_file, mode="w", newline="", encoding="utf-8") as file:
+            fieldnames = ['product_name', 'quantity', 'unit_price', 'category']
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(self.inventory)
+        print(f"Inventory saved to {output_file}")
