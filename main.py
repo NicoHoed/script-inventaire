@@ -1,4 +1,5 @@
 import argparse
+import os
 from inventory_manager import InventoryManager
 
 def print_help():
@@ -85,7 +86,11 @@ def main():
     # Search functionality
     if args.search:
         print(f"Searching for: {args.search}")
-        manager.search_inventory(args.search)
+        if os.path.exists("inventory.csv"):
+            manager.import_csv_files_from_file("inventory.csv")  # Charger l'inventaire depuis le fichier sauvegardé
+            manager.search_inventory(args.search)
+        else:
+            print("Error: No inventory file found. Please import data first.")
 
     # Generate report
     if args.report:

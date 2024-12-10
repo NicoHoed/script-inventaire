@@ -38,10 +38,17 @@ class InventoryManager:
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
 
+        print(f"Total items in inventory: {len(self.inventory)}")
+
+
     def search_inventory(self, search_term):
         """Search the inventory for items that match the search term."""
+        if not self.inventory:
+            print("Inventory is empty. Please import data before searching.")
+            return
+
         # Normalize the search term for case-insensitive search
-        search_term = search_term.lower()
+        search_term = search_term.strip().lower()
 
         found_items = [item for item in self.inventory if
                        search_term in item['product_name'].lower() or search_term in item['category'].lower()]
@@ -49,7 +56,10 @@ class InventoryManager:
         if found_items:
             print(f"Found {len(found_items)} matching item(s):")
             for item in found_items:
-                print(item)
+                print(f"Product Name: {item['product_name']}, "
+                      f"Quantity: {item['quantity']}, "
+                      f"Unit Price: {item['unit_price']}, "
+                      f"Category: {item['category']}")
         else:
             print("No matching items found.")
 
@@ -75,3 +85,16 @@ class InventoryManager:
             writer.writeheader()
             writer.writerows(self.inventory)
         print(f"Inventory saved to {output_file}")
+
+    def import_csv_files_from_file(self, file_path):
+        """Load inventory data from a saved CSV file."""
+        print(f"Loading inventory data from {file_path}...")
+        try:
+            with open(file_path, mode="r", newline="", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
+                self.inventory = [row for row in reader]
+            print(f"Loaded {len(self.inventory)} items into inventory.")
+        except FileNotFoundError:
+            print(f"Error: File {file_path} not found.")
+        except Exception as e:
+            print(f"Error reading {file_path}: {e}")
