@@ -1,125 +1,128 @@
-import argparse
+"""This module provides a command-line interface for managing an inventory system."""
 import os
-from inventory_manager import InventoryManager
+from cmd import Cmd
+import pandas as pd
 
 
-def print_help():
-    """Custom help function."""
-    print("""
-    Inventory Management Tool
-    Usage:    ./main.py --import-data <directory> --output <file>
-                Import inventory data and save it to a file.
-    ./main.py --search <keyword>
-                Search for items in the inventory by product name or category.
-    ./main.py --report <filename>
-                Generate a summary report of the inventory.
-
-    Example usage:
-        ./main.py --import-data test_data --output inventory.csv
-        ./main.py --search Electronics
-        ./main.py --report summary_report.csv
-
-    Options:
-        --help              Show this help message.
-        --import-data       Directory containing CSV files to import.
-        --search            Search for a product or category.
-        --output            File to save the inventory report.
-        --report            Generate a report and save it to a specified file.
-    """)
-
-
-def parse_args():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description=(
-            "Inventory management tool for importing, searching, and "
-            "reporting inventory data."
-        )
-    )
-
-    # Add arguments
-    parser.add_argument(
-        "--import-data",
-        help=(
-            "Directory containing CSV files to import. "
-            "Example: --import-data test_data"
-        ),
-        type=str
-    )
-
-    parser.add_argument(
-        "--search",
-        help=(
-            "Search for a product or category in the inventory. "
-            "Example: --search Electronics"
-        ),
-        type=str
-    )
-
-    parser.add_argument(
-        "--output",
-        help=(
-            "File to save the inventory report. "
-            "Example: --output inventory.csv"
-        ),
-        type=str
-    )
-
-    parser.add_argument(
-        "--report",
-        help=(
-            "Generate a report and save it to a specified file. "
-            "Example: --report report.csv"
-        ),
-        type=str
-    )
-
-    parser.add_argument(
-        "help",
-        help="Show help message.",
-        nargs="?",
-        default=False
-    )
-
-    return parser.parse_args()
-
-
-def main():
-    """Main function to handle the logic for :
-        - importing data
-        - searching
-        - generating reports.
+class InventoryManager(Cmd):
     """
-    args = parse_args()
+    A command-line interface for loading, searching, summarizing, and displaying inventory data.
+    """
+    intro = "\nWelcome to the Inventory Manager. Type 'help' or '?' to see available commands.\n"
+    prompt = "(inventory) "
 
-    # Show custom help if 'help' is passed as an argument
-    if args.help:
-        print_help()
-        return
+    def __init__(self):
+        super().__init__()
+        self.inventory = pd.DataFrame()
 
-    manager = InventoryManager()
+    def do_load(self, args):
+        """
+        Load CSV files into a unified database.
+        Syntax: load <folder_containing_files>
+        """
+        folder_path = args.strip()
+        if not os.path.isdir(folder_path):
+            print("Folder not found.")
+            return
 
-    # Import data
-    if args.import_data:
-        print(f"Importing data from: {args.import_data}")
-        manager.import_csv_files(args.import_data)
-        manager.save_inventory(args.output or "inventory.csv")
-        print(f"Inventory written to {args.output or 'inventory.csv'}.")
+        files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+        if not files:
+            print("No CSV files found in the folder.")
+            return
 
-    # Search functionality
-    if args.search:
-        print(f"Searching for: {args.search}")
-        if os.path.exists("inventory.csv"):
-            manager.import_csv_files_from_file("inventory.csv")
-            manager.search_inventory(args.search)
+        data_frames = []
+        for file in files:
+            file_path = os.path.join(folder_path, file)
+            try:
+                df = pd.read_csv(file_path)
+                data_frames.append(df)
+                print(f"Loaded: {file}")
+            except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
+                print(f"Error loading {file}: {e}")
+
+        if data_frames:
+            self.inventory = pd.concat(data_frames, ignore_index=True)
+            print("All CSV files have been consolidated.")
         else:
-            print("Error: No inventory file found. Please import data first.")
+            print("No valid files were loaded.")
 
-    # Generate report
-    if args.report:
-        print(f"Generating report: {args.report}")
-        manager.generate_report(args.report)
+    def do_search(self, args):
+        """
+        Search for a product or category.
+        Syntax: search <column=value>
+        """
+        if self.inventory.empty:
+            print("The database is empty. Load data first.")
+            return
+
+        try:
+            column, value = args.split('=')
+            column = column.strip()
+            value = value.strip()
+
+            if column not in self.inventory.columns:
+                print(f"Column '{column}' not found in the data.")
+                return
+
+            result = self.inventory[
+                self.inventory[column].astype(str).str.contains(value, case=False, na=False)
+            ]
+            if result.empty:
+                print("No results found.")
+            else:
+                print(result)
+        except ValueError:
+            print("Invalid syntax. Use 'search <column=value>'.")
+
+    def do_summary(self, args):
+        """
+        Generate a summary report.
+        Syntax: summary
+        """
+        if self.inventory.empty:
+            print("The database is empty. Load data first.")
+            return
+
+        try:
+            summary = self.inventory.groupby('category').agg({
+                'quantity': 'sum',
+                'unit_price': 'mean'
+            }).rename(columns={
+                'quantity': 'Total Quantity',
+                'unit_price': 'Average Price'
+            })
+
+            print(summary)
+
+            save_path = args.strip() or "summary_report.csv"
+            summary.to_csv(save_path)
+            print(f"Summary report exported to {save_path}.")
+        except KeyError as e:
+            print(f"Error generating the report: Missing required column: {e}")
+
+    def do_show(self, args):
+        """
+        Display the first rows of the consolidated database.
+        Syntax: show <number_of_rows>
+        """
+        if self.inventory.empty:
+            print("The database is empty. Load data first.")
+            return
+
+        try:
+            n = int(args.strip()) if args.strip() else 5
+            print(self.inventory.head(n))
+        except ValueError:
+            print("Please provide a valid number for the number of rows.")
+
+    def do_exit(self, _):
+        """
+        Exit the application.
+        Syntax: exit
+        """
+        print("Goodbye!")
+        return True
 
 
 if __name__ == "__main__":
-    main()
+    InventoryManager().cmdloop()
