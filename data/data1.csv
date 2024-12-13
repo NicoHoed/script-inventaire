@@ -1,6 +1,11 @@
-product_id,product_name,category,quantity,unit_price
-1,Laptop,Electronics,15,1200.00
-2,Smartphone,Electronics,50,800.00
-3,Desk,Furniture,10,250.00
-4,Chair,Furniture,30,75.00
-5,Notebook,Stationery,100,2.50
+product_name,quantity,unit_price,category
+Laptop,10,800.0,Electronics
+Smartphone,15,500.0,Electronics
+Wireless Mouse,8,25.0,Electronics
+Headphones,12,60.0,Accessories
+Desk Chair,7,150.0,Furniture
+Monitor,5,250.0,Electronics
+Coffee Maker,10,45.0,Home Appliances
+Blender,14,35.0,Home Appliances
+Winter Jacket,20,80.0,Clothing
+Running Shoes,13,70.0,Clothing
