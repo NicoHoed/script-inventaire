@@ -1,4 +1,7 @@
-"""This module provides a command-line interface for managing an inventory system."""
+"""
+This module provides a command-line
+interface for managing an inventory system.
+"""
 import argparse
 import os
 from cmd import Cmd
@@ -26,14 +29,16 @@ def print_info(message):
 
 class InventoryManager(Cmd):
     """
-    A command-line interface for loading, searching, summarizing, and displaying inventory data.
+    A command-line interface for loading,
+    searching, summarizing, and displaying inventory data.
     """
-    intro = "\nWelcome to the Inventory Manager. Type 'help' or '?' to see available commands.\n"
+    intro = ("\nWelcome to the Inventory Manager."
+             "Type 'help' or '?' to see available commands.\n")
     prompt = "(inventory) "
 
     def __init__(self):
         super().__init__()
-        self.inventory = pd.DataFrame()  # Initialize an empty DataFrame to store inventory data
+        self.inventory = pd.DataFrame()
 
     def do_load(self, folder_path):
         """
@@ -84,8 +89,11 @@ class InventoryManager(Cmd):
                 return
 
             result = self.inventory[
-                self.inventory[column].astype(str).str.contains(value, case=False, na=False)
+                self.inventory[column]
+                .astype(str)
+                .str.contains(value, case=False, na=False)
             ]
+
             if result.empty:
                 print_info("No results found.")
             else:
@@ -102,7 +110,9 @@ class InventoryManager(Cmd):
             print_error("The database is empty. Load data first.")
             return
 
-        group_col, quantity_col, price_col = 'category', 'quantity', 'unit_price'
+        group_col = 'category'
+        quantity_col = 'quantity'
+        price_col = 'unit_price'
         required_columns = [group_col, quantity_col, price_col]
         if not all(col in self.inventory.columns for col in required_columns):
             print_error("Required columns are missing for summary.")
@@ -134,7 +144,7 @@ class InventoryManager(Cmd):
             n = int(n.strip()) if n.strip() else 5
             print_info(self.inventory.head(n).to_string())
         except ValueError:
-            print_error("Please provide a valid number for the number of rows.")
+            print_error("Please provide a valid number of rows.")
 
 
 def main():
@@ -148,11 +158,25 @@ def main():
 
     If no arguments are provided, starts the interactive mode.
     """
+
     parser = argparse.ArgumentParser(description="Inventory Manager CLI")
-    parser.add_argument("--load", help="Load CSV files from a folder")
-    parser.add_argument("--search", help="Search for a product or category (format: column=value)")
-    parser.add_argument("--summary", help="Generate a summary report and save to a file")
-    parser.add_argument("--show", type=int, help="Display the first N rows of the inventory")
+    parser.add_argument(
+        "--load",
+        help="Load CSV files from a folder"
+    )
+    parser.add_argument(
+        "--search",
+        help="Search for a product or category (format: column=value)"
+    )
+    parser.add_argument(
+        "--summary",
+        help="Generate a summary report and save to a file"
+    )
+    parser.add_argument(
+        "--show",
+        type=int,
+        help="Display the first N rows of the inventory"
+    )
 
     args = parser.parse_args()
     manager = InventoryManager()
