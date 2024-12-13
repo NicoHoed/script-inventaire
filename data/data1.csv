@@ -1,0 +1,6 @@
+product_id,product_name,category,quantity,unit_price
+1,Laptop,Electronics,15,1200.00
+2,Smartphone,Electronics,50,800.00
+3,Desk,Furniture,10,250.00
+4,Chair,Furniture,30,75.00
+5,Notebook,Stationery,100,2.50

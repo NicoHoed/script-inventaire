@@ -1,0 +1,6 @@
+product_id,product_name,category,quantity,unit_price
+6,Tablet,Electronics,20,500.00
+7,Sofa,Furniture,5,600.00
+8,Pencil,Stationery,200,0.50
+9,Mouse,Electronics,40,25.00
+10,Printer,Electronics,10,150.00
